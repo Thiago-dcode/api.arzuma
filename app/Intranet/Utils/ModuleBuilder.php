@@ -6,6 +6,8 @@ use App\Intranet\Utils\Path;
 use App\Intranet\Utils\Utils;
 use App\Models\Module;
 
+use function PHPUnit\Framework\fileExists;
+
 class ModuleBuilder
 {
 
@@ -33,8 +35,10 @@ class ModuleBuilder
     public static function generateApiRoutes($modules)
     {
 
-
-        $path = Path::ROOT . 'api/routes/modules.php';
+        
+        $path =Path::ROOT. 'routes/modules.php';
+        
+       
         $open = '<?php
 use App\Intranet\Utils\Utils;';
 
@@ -69,8 +73,9 @@ use App\Intranet\Utils\Utils;';
         $moduleObject = '';
 
         foreach ($modules as $key => $module) {
-
+           
             $module = Utils::objectToArray($module);
+           
             if(!$module['is_active']) continue;
             $moduleName = $module['name'];
             $moduleNameCapitalize = ucfirst($moduleName);
@@ -81,10 +86,10 @@ use App\Intranet\Utils\Utils;';
            Route::get( '{company:name}$route',[App\Http\Controllers\Intranet\Modules" . "\\$moduleNameCapitalize" . "Controller::class,'index']);
                  break;\r\n";
         }
-
+      
         $content = $open . $import . $middle . $switchConditional . $close;
 
-
+      
 
         return  file_put_contents($path, $content);;
     }
@@ -108,6 +113,8 @@ use App\Intranet\Utils\Utils;';
     {
         $module = Utils::objectToArray($module);
         if(!$module['is_active']) return;
+
+       
         $moduleName =  ucfirst($module['name']);
         $name = '$companyName';
         $request = ', Request $request';
@@ -115,7 +122,7 @@ use App\Intranet\Utils\Utils;';
         $conditional = 'if(!Validate::module($request->user(),"'.$module['name'].'",$companyName)){'."\n\n\t\t\t".'return response("You are not authorized to access to '.$moduleName.' module",401);'."\n\t\t".'}';
       
       
-        $path =  Path::ROOT . "api/app/Http/Controllers/Intranet/Modules/$moduleName" . "Controller.php";
+        $path =  Path::ROOT . "app/Http/Controllers/Intranet/Modules/$moduleName" . "Controller.php";
         if (file_exists($path)) return;
         $content = "<?php\nnamespace App\Http\Controllers\Intranet\Modules;\r\nuse Illuminate\Http\Request;\r\nuse App\Models\Module;\r\nuse App\Intranet\Utils\Validate;\r\nuse App\Traits\HttpResponses;\r\nuse App\Http\Controllers\Controller;\r\n\nclass {$moduleName}Controller extends Controller{\r\n\n\tuse HttpResponses;\r\n\n\tpublic function index($args){\r\n\n\t\t$conditional\n\n\t\t //start your logic here\n\t\treturn response(\"$moduleName module for campany $name created successfully.\");\r\n\t}\n\n}";
         return file_put_contents($path, $content);
@@ -124,13 +131,10 @@ use App\Intranet\Utils\Utils;';
     public static function run(){
         $modules = Module::all();
         
-       static::generateFrontEndRoutes($modules);
-       static::generateApiRoutes($modules);
+        static::generateApiRoutes($modules);
         foreach ($modules as $key => $module) {
            
-           static::generateView($module);
-
-           static::generateController($module);
+          static::generateController($module);
         }
 
     }

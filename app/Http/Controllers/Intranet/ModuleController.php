@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Intranet;
-
+use App\Rules\NoSpacesOrDots;
 use App\Models\User;
 use App\Models\Module;
 use Illuminate\Http\Request;
@@ -39,11 +39,11 @@ class ModuleController extends Controller
 
     public function create(Request $request)
     {
-
+       
         try {
             $fields = $request->validate([
-                'name' => 'required|max:255|unique:modules',
-                'route' => 'required|unique:modules',
+                'name' => ['required', 'max:255', 'unique:modules', new NoSpacesOrDots],
+                'route' =>['required', 'max:255', 'unique:modules', new NoSpacesOrDots],
                 'is_active' => 'boolean',
                 'logo' => 'string',
             ]);

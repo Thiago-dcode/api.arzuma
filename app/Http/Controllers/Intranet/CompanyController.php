@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Intranet;
+
 use Illuminate\Validation\ValidationException;
 use App\Rules\NoSpacesOrDots;
 use App\Models\Module;
@@ -71,34 +72,52 @@ class CompanyController extends Controller
 
     public function update($id, Request $request)
     {
-        $company = Company::find($id);
+        try {
+            $company = Company::findOrFail($id);
 
-        // try {
-        //     $fields = $request->validate([
-        //         'name'  =>  'required|max:255|unique:companies,name,' . $id,
-        //         'color' => 'string',
-        //         'logo' => 'string',
-        //     ]);
-        // } catch (ValidationException $e) {
-        //     // Validation failed; return an error response with validation messages
+            $request->validate([
+                'name' => 'max:255|unique:companies,name,' . $company->id,
+                'color' => 'string',
+                'is_active' => 'boolean',
+                'logo' => 'file', // Allow updating the logo
+            ]);
 
-        //     return $this->error($e->errors(), '', 422);
+            // Update the company attributes
+            $company->fill([
+                'name' => $request->input('name', $company->name), // Use the current value if not present in the request
+                'color' => $request->input('color', $company->color), // Use the current value if not present in the request
+                'is_active' => $request->input('is_active', $company->is_active), // Use the current value if not present in the request
+            ]);
 
-        // }
-
-        // $company->update($fields);
-
-        if (isset($request['modules'])) {
-            $modulesToAttach = [];
-            foreach ($request['modules'] as $key => $module) {
-
-                if ($company->modules()->where('modules.id', $module)->exists() || !Module::find($module)) continue;
-                array_push($modulesToAttach, $module);
+            // Update the logo if provided
+            if ($request->hasFile('logo')) {
+                $logo = $request->file('logo');
+                $logoPath = $logo->storeAs('companyLogo', $company->name . '.' . $logo->getClientOriginalExtension(), 'public');
+                $company->logo = $logoPath;
             }
 
-            $company->modules()->attach($modulesToAttach);
-        }
+            // Save the changes
+            $company->save();
 
-        return  $this->success(Company::find($id), 'Company updated correctly');
+            // Attach modules
+            if ($request->has('modules') && is_array($request->modules)) {
+               
+                $modulesToAttach = collect($request->modules)->filter(function ($module) use ($company) {
+                   
+                    return !$company->modules->contains($module) && Module::find($module);
+                });
+              
+                $company->modules()->attach($modulesToAttach->all());
+            }
+
+            // Return the updated company in JSON
+            return response()->json(['company' => Company::findOrFail($id)], 200);
+        } catch (ValidationException $e) {
+            // Handle validation errors
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            // Handle other exceptions (e.g., database errors)
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 }

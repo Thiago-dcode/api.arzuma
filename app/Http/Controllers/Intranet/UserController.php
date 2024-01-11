@@ -23,25 +23,50 @@ class UserController extends Controller
 
         $user = User::find($id);
 
-        if (isset($request['company']) && isset($request['modules'])) {
+        if ($request->has('companies') && is_array($request->companies)) {
+            $companiesToAtach = [];
+            foreach ($request->companies as $company) {
+                $company = (int) $company;
+                if (is_int($company) && $user->companies()->where('company_id', $company)->exists()) {
+                    continue;
+                }
+                array_push($companiesToAtach, $company);
+                // Attach the company to the user
 
-            foreach ($request['modules'] as $key => $module) {
+            }
+          
+            $user->companies()->attach($companiesToAtach);
+         
+        }
 
-                if (User::findModule($id, $request['company'], $module)) continue;
 
-                ModuleUser::firstOrCreate([
-
-                    'user_id' => $id,
-                    'company' => $request['company'],
-                    'module_id' => $module
-
-                ]);
+        if (isset($request['modules']) && is_array($request['modules']) && count(array_filter(array_keys($request['modules']), 'is_string')) > 0) {
+            foreach ($request['modules'] as $company => $modules) {
+              
+                // Check if $company is a string and $modules is an array
+                if (!is_string($company) || !is_array($modules)) continue;
+                // Check if the user is attached to the specified company
+                if (!$user->companies()->where('name', $company)->exists())  continue;
+                foreach ($modules as $module) {
+                    // Check if the user already has the module for the specified company
+                    if (User::findModule($id, $company, $module)) {
+                        continue;
+                    }
+                    
+                    // Create a new record in the ModuleUser pivot table
+                    ModuleUser::firstOrCreate([
+                        'user_id' => $id,
+                        'company' => $company,
+                        'module_id' => $module,
+                    ]);
+                   
+                }
             }
         }
 
         return $this->success([
-            'user' => $user,
-            'modules' => User::allModulesByCompany($user->id, $request['company']),
+            'user' => User::find($id),
+            'modules' => User::allModules($user->id),
         ]);
     }
     public function create(Request $request)
@@ -60,7 +85,7 @@ class UserController extends Controller
                 'email' => $fields['email'],
                 'password' => bcrypt($fields['password']), // Hash the password
                 'is_active' => $fields['is_active'],
-                'is_admin'=> 0
+                'is_admin' => 0
             ]);
 
             // Retrieve the created user and return it in JSON
