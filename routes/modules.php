@@ -45,7 +45,7 @@ use App\Http\Controllers\Intranet\Modules\ImportArticulosController;
                  break;
 
             case 'importArticulos':
-           Route::get( '{company:name}/modules/importArticulos',[App\Http\Controllers\Intranet\Modules\ImportArticulosController::class,'index']);
+           Route::post( '{company:name}/modules/importArticulos',[App\Http\Controllers\Intranet\Modules\ImportArticulosController::class,'index']);
                  break;
 
             default:
