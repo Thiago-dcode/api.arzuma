@@ -78,7 +78,7 @@ class CombinacionesController extends Controller
 
 
             $result = Combinaciones::update($companyName, $articulo);
-             return $this->error(['result' => $result], '', 420);
+            //  return $this->error(['result' => $result], '', 420);
         }
         if ($result) {
             return $this->success(['articulos' => $request->toArray(), 'result' => $result, 'isUpdate' => true], '');

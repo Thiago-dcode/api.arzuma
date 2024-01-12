@@ -410,6 +410,7 @@ class Combinaciones
 
     private  static function formatData($data)
     {
+        // dd($data);
 
         $marca = self::getMarca();
 
@@ -671,9 +672,10 @@ class Combinaciones
     }
 
     private static function getHombreMujer($articulo)
-    {   return $articulo;
+    {
+        if (!isset($articulo["hombre/mujer"])) return '';
         $hombreMujer = $articulo["hombre/mujer"];
-     
+
         $sql = "select codigo, nombre from webgrupocategoria where codigo = $hombreMujer";
         $stmt =  static::$firebird->prepare($sql);
 
@@ -685,6 +687,7 @@ class Combinaciones
     }
     private static function getCategoriaWeb($articulo)
     {
+        if (!isset($articulo["hombre/mujer"]) || !isset($articulo["cat.web"])) return '';
         $codgrupo = $articulo["hombre/mujer"];
         $codigo = $articulo["cat.web"];
 
@@ -741,9 +744,10 @@ class Combinaciones
 
     private static function updateArticulos($articulo)
     {
-        
+
+
         $hombreMujer = self::getHombreMujer($articulo);
-        return $hombreMujer;
+
         $categoriaWeb = self::getCategoriaWeb($articulo);
 
         $vars = [
@@ -837,52 +841,55 @@ class Combinaciones
 
     private static function updateCarValor($articulo)
     {
+
         $codcaractTemporada = self::getCodCaractCarValor('Temporada');
         $codcaractColeccion = self::getCodCaractCarValor('Colección');
 
 
 
         $result = true;
-
-        //temporada
-
         $vars = [
             'codclase' => 2,
             'codobjeto' => $articulo['COD'],
             'codcaract' => $codcaractTemporada,
-            'valor' => $articulo['temporada'],
-        ];
-        $vars2 = [
-            'codclase' => 2,
-            'codobjeto' => $articulo['COD'],
-            'codcaract' => $codcaractColeccion,
-            'valor' => $articulo['coleccion'],
+            'valor' =>  '',
         ];
 
-        $sql = 'UPDATE carvalor 
-                SET valor = \'' . $vars['valor'] . '\'
-                WHERE codobjeto = \'' . $vars['codobjeto'] . '\' 
-                AND codclase = ' . $vars['codclase'] . '
-                AND codcaract = ' . $vars['codcaract'];
-
-        $sql2 = 'UPDATE carvalor 
-                SET valor = \'' . $vars2['valor'] . '\'
-                WHERE codobjeto = \'' . $vars2['codobjeto'] . '\' 
-                AND codclase = ' . $vars2['codclase'] . '
-                AND codcaract = ' . $vars2['codcaract'];
-
-        $stmt =  static::$firebird->prepare($sql);
-
-        if ($articulo['temporada']) {
+        //temporada
+        if (isset($articulo['temporada']) && $articulo['temporada'] &&  $codcaractTemporada) {
+           
+            $vars['valor'] = $articulo['temporada'];
+            $sql = 'UPDATE carvalor 
+            SET valor = \'' . $vars['valor'] . '\'
+            WHERE codobjeto = \'' . $vars['codobjeto'] . '\' 
+            AND codclase = ' . $vars['codclase'] . '
+            AND codcaract = ' . $vars['codcaract'];
+            $stmt =  static::$firebird->prepare($sql);
             $result = $stmt->execute();
         }
+        if (isset($articulo['coleccion']) && $articulo['coleccion'] &&  $codcaractColeccion) {
+         
+            $vars['valor'] = $articulo['coleccion'];
 
-        //coleccion
-        $stmt2 = static::$firebird->prepare($sql2);
+            $sql = 'UPDATE carvalor 
+                    SET valor = \'' . $vars['valor'] . '\'
+                    WHERE codobjeto = \'' . $vars['codobjeto'] . '\' 
+                    AND codclase = ' . $vars['codclase'] . '
+                    AND codcaract = ' . $vars['codcaract'];
 
-        if ($articulo['coleccion']) {
+            $stmt2 = static::$firebird->prepare($sql);
             $result =  $stmt2->execute();
         }
+
+
+
+
+
+        //coleccion
+
+      
+
+
         // $combinacionesLogger->debug('Carvalor Temporada actualizada', $vars);
 
         return $result;
@@ -914,7 +921,7 @@ class Combinaciones
             } catch (\Throwable $th) {
                 //throw $th;
             }
-            
+            // $combinacionesLogger->debug('venta actualizada', $vars);
 
         }
         return $result;
@@ -943,7 +950,7 @@ class Combinaciones
 
                 $result =  $stmt->execute();
             } catch (\Throwable $th) {
-                
+                //throw $th;
             }
             // $combinacionesLogger->debug('compra actualizada', $vars);
 
@@ -973,7 +980,7 @@ class Combinaciones
                     AND valorcaract = \'' . $vars['valorcaract'] . '\'';
                 $stmt = static::$firebird->prepare($sql);
 
-                $result = $stmt->execute();
+                $result =    $stmt->execute();
             } catch (\Throwable $th) {
                 //throw $th;
             }
@@ -1089,27 +1096,25 @@ class Combinaciones
         }
 
         $codcaract =   self::getCodCaract($articulo);
-         
         $result = false;
 
         $result = self::updateArticulos($articulo);
-        return $result;
+
         $result =  self::updateCompra($articulo);
 
         $result =  self::updateCarValor($articulo);
-
-        if ($articulo['hombre/mujer'] && $articulo['cat.web']) {
+    
+        if (isset($articulo['hombre/mujer']) && $articulo['hombre/mujer'] && isset($articulo['cat.web']) && $articulo['cat.web']) {
 
             $result = self::updateCategoriaWeb($articulo);
         };
 
-
-        if (isset($articulo['venta']) && $articulo['venta'] && $codcaract) {
+        if (isset($articulo['venta']) && $articulo['venta']) {
 
             $result = self::updatePrecioVenta($articulo, $codcaract);
         };
 
-        if (isset($articulo['compra']) && $articulo['compra'] && $codcaract) {
+        if (isset($articulo['compra']) && $articulo['compra']) {
 
             $result = self::updatePrecioCompra($articulo, $codcaract);
         };
@@ -1119,7 +1124,7 @@ class Combinaciones
             $result =  self::updateCodBar($articulo, $codcaract);
         };
 
-        if (isset($articulo['deshab']) && $codcaract) {
+        if (isset($articulo['deshab'])) {
 
             $result = self::updateInhabilitar($articulo, $codcaract);
         };
