@@ -39,11 +39,15 @@ class ImportArticulosController extends Controller
 			$desirePath = "uploads/$companyName/$subfolder/";
 			$path = $uploadedFile->storeAs($desirePath, $file);
 			$fileContent = Storage::get($path);
-
 			$articulos = ImportArt::getArticulos($fileContent);
-			dd($articulos);
+			if(!$articulos){
+
+				return $this->error(['errors' => [
+					'file'=> 'No article found inside the '. $file
+				]], "Validation error", 401);
+			}
 		
-			
+			dd($articulos);
 
 
 
