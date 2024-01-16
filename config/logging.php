@@ -58,9 +58,9 @@ return [
             'ignore_exceptions' => false,
         ],
         
-        'importArt' => [
+        'modules' => [
             'driver' => 'single',
-            'path' => storage_path('logs/laravel.log'),
+            'path' => storage_path('logs/modules/modulename'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
         ],

@@ -23,7 +23,7 @@ class Combinaciones
 
         $result = [];
 
-
+        
 
         $offset = 0;
         $page = 1;

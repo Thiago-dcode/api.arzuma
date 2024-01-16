@@ -29,7 +29,7 @@ class ImportArticulosController extends Controller
 
 			return response("You are not authorized to access to importArticulos module", 401);
 		}
-		dd($request->user());
+	
 		try {
 
 			$request->validate([
@@ -38,13 +38,16 @@ class ImportArticulosController extends Controller
 			$uploadedFile = $request->file('file');
 
 			$file = $uploadedFile->getClientOriginalName();
-
-			$subfolder = date('d-m-Y');
-
-			$desirePath = "uploads/$companyName/$subfolder/";
+		
+			$today = date('d-m-Y');
+			$moduleName = $request->user()["module_active"];
+			
+			$desirePath = "uploads/$companyName/$today/";
 			$path = $uploadedFile->storeAs($desirePath, $file);
 			$fileContent = Storage::get($path);
+		
 			$articulos = ImportArt::getArticulosFromTxt($fileContent);
+			
 			if (!$articulos) {
 
 				return $this->error(['errors' => [
@@ -52,25 +55,45 @@ class ImportArticulosController extends Controller
 				]], "Validation error", 401);
 			}
 			
-			config(['logging.channels.modules.path' => storage_path("logs/modules//" . $subfolder . '.log')]);
+			config(['logging.channels.modules.path' => storage_path("logs/modules/$moduleName/" . $today . '.log')]);
+			
 			//check if exist articulo
 			foreach ($articulos as $codigo => $articulo) {
-
-				$pymeArticulo = ImportArt::getArticulo($company, $codigo);
-
+				
+				$pymeArticulo = ImportArt::getArticulo($companyName, $codigo);
+				dd($pymeArticulo);
 				if ($pymeArticulo) {
 					//log debug if exist or not
 
-					Log::channel('custom')->useFiles()->debug('');
+					Log::channel('modules')->debug("Articulo con codigo: $codigo existe en PYME empezando UPDATE");
 					// update the precio,cantidad, codbar, iva
+					$update = true;
+
+					if ($update['status']) {
+						Log::channel('modules')->info("UPDATE de Articulo con codigo: $codigo, precio: {$pymeArticulo['precio']}->{$articulo['precio']} cantidad: {$pymeArticulo['cantidad']}->{$articulo['cantidad']} iva: {$pymeArticulo['iva']}->{$articulo['iva']} codbar: {$pymeArticulo['codbar']}->{$articulo['codbar']}");
+						continue;
+					}
+
+					Log::channel('modules')->error("ERROR en UPDATE de Articulo con codigo: $codigo, {$update['error']}");
 					//log info with the previus articulo data and the new one
 
 					continue;
 				}
-				//log debug if exist or not
+				Log::channel('modules')->debug("Articulo con codigo: $codigo  NO existe en PYME empezando INSERT");
 				//insert with codigo, nombre, precio, cantidad, codbar,iva
 				//log info of the insert
 
+				$insert = true;
+
+				if ($insert['status']) {
+					Log::channel('modules')->info("INSERT de Articulo con codigo: $codigo, nombre: {$articulo['nombre']}  precio: {$articulo['precio']} cantidad: {$articulo['cantidad']} iva: {$articulo['iva']} codbar: {$articulo['codbar']}");
+					continue;
+				}
+
+				Log::channel('modules')->error("ERROR en INSERT de Articulo con codigo: $codigo, {$update['error']}");
+				//log info with the previus articulo data and the new one
+
+				continue;
 			}
 
 

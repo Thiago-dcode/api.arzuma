@@ -17,12 +17,19 @@ class ImportArt
     private static function connect($company)
     {
 
-        static::$firebird = PymeConnection::start(Constants::get($company));
-        $firebird = static::$firebird;
+        try {
+            static::$firebird = PymeConnection::start(Constants::get($company));
+        } catch (\Throwable $th) {
+            
+            echo $th->getMessage();
+        }
+
+      
     }
 
     public static function getArticulo($company, $codigo)
     {
+
         if (!static::$firebird) self::connect($company);
         $sql = "select * from articulo where codigo=:codigo";
 
@@ -31,11 +38,12 @@ class ImportArt
             'codigo' => $codigo
         ]);
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-       return $result;
+        return $result;
     }
 
-    public static function getArticulos($fileContent)
+    public static function getArticulosFromTxt($fileContent)
     {
+
         $articulos = [];
         $hasArt = false;
         $lines = explode(PHP_EOL, $fileContent);
