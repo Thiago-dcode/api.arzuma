@@ -12,6 +12,7 @@ use App\Intranet\Utils\Path;
 use Illuminate\Support\Facades\Storage;
 use App\Intranet\Modules\ImportArt;
 use App\Intranet\Utils\Constants;
+use Illuminate\Support\Facades\Log;
 use PHPUnit\TextUI\Configuration\Constant;
 
 class ImportArticulosController extends Controller
@@ -28,6 +29,7 @@ class ImportArticulosController extends Controller
 
 			return response("You are not authorized to access to importArticulos module", 401);
 		}
+		dd($request->user());
 		try {
 
 			$request->validate([
@@ -42,15 +44,38 @@ class ImportArticulosController extends Controller
 			$desirePath = "uploads/$companyName/$subfolder/";
 			$path = $uploadedFile->storeAs($desirePath, $file);
 			$fileContent = Storage::get($path);
-			$articulos = ImportArt::getArticulos($fileContent);
-			if(!$articulos){
+			$articulos = ImportArt::getArticulosFromTxt($fileContent);
+			if (!$articulos) {
 
 				return $this->error(['errors' => [
-					'file'=> 'No article found inside the '. $file
+					'file' => 'No article found inside the ' . $file
 				]], "Validation error", 401);
 			}
-			dd(Constants::get($companyName));
-			dd($articulos);
+			
+			config(['logging.channels.modules.path' => storage_path("logs/modules//" . $subfolder . '.log')]);
+			//check if exist articulo
+			foreach ($articulos as $codigo => $articulo) {
+
+				$pymeArticulo = ImportArt::getArticulo($company, $codigo);
+
+				if ($pymeArticulo) {
+					//log debug if exist or not
+
+					Log::channel('custom')->useFiles()->debug('');
+					// update the precio,cantidad, codbar, iva
+					//log info with the previus articulo data and the new one
+
+					continue;
+				}
+				//log debug if exist or not
+				//insert with codigo, nombre, precio, cantidad, codbar,iva
+				//log info of the insert
+
+			}
+
+
+
+
 
 
 

@@ -21,7 +21,7 @@ class ImportArt
         $firebird = static::$firebird;
     }
 
-    private static function getArticulo($company, $codigo)
+    public static function getArticulo($company, $codigo)
     {
         if (!static::$firebird) self::connect($company);
         $sql = "select * from articulo where codigo=:codigo";
