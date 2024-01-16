@@ -11,6 +11,9 @@ use App\Http\Controllers\Controller;
 use App\Intranet\Utils\Path;
 use Illuminate\Support\Facades\Storage;
 use App\Intranet\Modules\ImportArt;
+use App\Intranet\Utils\Constants;
+use PHPUnit\TextUI\Configuration\Constant;
+
 class ImportArticulosController extends Controller
 {
 
@@ -46,7 +49,7 @@ class ImportArticulosController extends Controller
 					'file'=> 'No article found inside the '. $file
 				]], "Validation error", 401);
 			}
-		
+			dd(Constants::get($companyName));
 			dd($articulos);
 
 

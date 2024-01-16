@@ -13,9 +13,25 @@ use Symfony\Component\HttpFoundation\Request;
 
 class ImportArt
 {
-
-    private static function extractData($arr, $start, $end)
+    static $firebird = null;
+    private static function connect($company)
     {
+
+        static::$firebird = PymeConnection::start(Constants::get($company));
+        $firebird = static::$firebird;
+    }
+
+    private static function getArticulo($company, $codigo)
+    {
+        if (!static::$firebird) self::connect($company);
+        $sql = "select * from articulo where codigo=:codigo";
+
+        $stmt = static::$firebird->prepare($sql);
+        $stmt->execute([
+            'codigo' => $codigo
+        ]);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+       return $result;
     }
 
     public static function getArticulos($fileContent)
@@ -26,7 +42,7 @@ class ImportArt
         $codigo = '';
         foreach ($lines as $key => $line) {
             try {
-                
+
                 if (trim($line) === '*BASEARTI') {
                     $hasArt = true;
                     if (!isset($lines[$key + 1])) break;
@@ -49,13 +65,13 @@ class ImportArt
                 }
                 if (trim($line) === '*BASEEAN') {
                     $count = 1;
-                   
+
                     if (!isset($lines[$key + $count])) break;
                     $nextLine = $lines[$key + $count];
                     while (trim($nextLine) !== '*BASEARTI') {
                         $count++;
                         $tipo = $nextLine[28];
-                       
+
                         $articulos[$codigo]['codbar'] = '';
 
                         if ($tipo == 0) {
