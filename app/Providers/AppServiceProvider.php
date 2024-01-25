@@ -22,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Constants::set('PRUEBA', 'nube.arzuma.es/3050:C:\Distrito2\TPV\Database\PRUEBAS-\2024.FDB');
         foreach (Company::all(['name']) as  $company) {
 
             CompanyBuilder::generateHostConstant($company['name']);
