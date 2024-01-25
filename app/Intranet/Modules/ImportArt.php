@@ -14,7 +14,7 @@ class ImportArt
     static $firebird = null;
     public static function connect($company)
     {
-
+       
         try {
 
             static::$firebird = PymeConnection::start(Constants::get($company));
@@ -192,16 +192,18 @@ class ImportArt
             'error' => 'No se ha podido INSERTAR en tabla ARTICULO'
         ];
         try {
-           
+         
             $result1 = self::insertArticulo($codigo, $articulo);
+         
             if (!$result1) {
                 $obj['error'] = 'No se ha podido INSERTAR en tabla ARTICULO';
             }
-         
+          
             $result2 = self::insertCodbar($codigo, $articulo);
             if (!$result2) {
                 $obj['error'] = 'No se ha podido INSERTAR en tabla CODBARRA';
             }
+
             // $result3 = self::insertCompra($codigo, $articulo);
             // if (!$result3) {
             //     $obj['error'] = 'No se ha podido INSERTAR en tabla COMPRA';
@@ -255,14 +257,12 @@ class ImportArt
         $vars = [
             'codigo' => (string) $codigo,
             'codmarca' => 1,
-            'nombre' => (string) $articulo['nombre'],
-            'descripcion' => (string) utf8_decode($articulo['nombre'] . '<br><br>'  . ',' . '' . ',' . ''),
-            'preciocoste' => $articulo['precio'],
-            'precioventa' => null,
-            'codfamilia' => null,
+            'nombre' =>(string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
+            'descripcion' => (string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
+            'preciocoste' => (float)$articulo['precio'],
             'baja' => 'F',
             'tipoactualizacion' => 0,
-            'tipoiva' => $articulo['tipoiva'],
+            'tipoiva' => (int)$articulo['tipoiva'],
             'tipoivareducido' => 1,
             'tipoivacompra' => 0,
             'tipoivacomprareducido' => 1,
@@ -272,38 +272,28 @@ class ImportArt
             'costedecimales' => 2,
             'stockfactor' => 1,
             'etiquetasegununidadmedida' => 0,
-            'proveeddefecto' => null,
             'ubicacion' => 0,
-            'descripcioncorta' => $articulo['nombre'],
+            'descripcioncorta' => (string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
             'formatodesccorta' => 0,
             'formatodescripcion' => 2,
-            'metakeywords' => null,
             'aplicarinvsujetopasivo' => 0,
             'tipobc3' => 20,
             'unidadcontrolcarubicstock' => 0,
             'excluirweb' => 'T',
         ];
-
-        $sql = 'INSERT INTO articulo 
-        (codigo, codmarca, nombre, codfamilia, baja, descripcion, preciocoste, precioventa, 
-        tipoactualizacion, tipoiva, tipoivareducido, tipoivacompra, tipoivacomprareducido, controlstock, 
-        unidaddecimales, preciodecimales, costedecimales, stockfactor, etiquetasegununidadmedida, proveeddefecto, 
-        ubicacion, descripcioncorta, formatodesccorta, formatodescripcion, metakeywords, aplicarinvsujetopasivo, 
-        tipobc3, unidadcontrolcarubicstock, excluirweb) 
+        $fieldsToInsert =  implode(',', array_keys($vars));
+   
+        $sql = "INSERT INTO articulo 
+        ($fieldsToInsert) 
         VALUES 
-        (\'' . $vars['codigo'] . '\', ' . (int)$vars['codmarca'] . ', \'' . $vars['nombre'] . '\', ' . (float)$vars['codfamilia'] . ', 
-        \'' . $vars['baja'] . '\', \'' . $vars['descripcion'] . '\', ' . (float)$vars['preciocoste'] . ', ' . (float)$vars['precioventa'] . ', 
-        ' . (int)$vars['tipoactualizacion'] . ', ' . (int)$vars['tipoiva'] . ', ' . (int)$vars['tipoivareducido'] . ', ' . (int)$vars['tipoivacompra'] . ', 
-        ' . (int)$vars['tipoivacomprareducido'] . ', ' . (int)$vars['controlstock'] . ', ' . (int)$vars['unidaddecimales'] . ', 
-        ' . (int)$vars['preciodecimales'] . ', ' . (int)$vars['costedecimales'] . ', ' . (int)$vars['stockfactor'] . ', 
-        ' . (int)$vars['etiquetasegununidadmedida'] . ', ' . (int)$vars['proveeddefecto'] . ', ' . (int)$vars['ubicacion'] . ', 
-        \'' . $vars['descripcioncorta'] . '\', ' . (int)$vars['formatodesccorta'] . ', ' . (int)$vars['formatodescripcion'] . ', 
-        \'' . $vars['metakeywords'] . '\', ' . (int)$vars['aplicarinvsujetopasivo'] . ', ' . (int)$vars['tipobc3'] . ', 
-        ' . (int)$vars['unidadcontrolcarubicstock'] . ', \'' . $vars['excluirweb'] . '\')';
+        ('{$vars['codigo']}',{$vars['codmarca']},'{$vars['nombre']}','{$vars['descripcion']}',{$vars['preciocoste']},'{$vars['baja']}',{$vars['tipoactualizacion']},{$vars['tipoiva']},{$vars['tipoivareducido']},{$vars['tipoivacompra']},{$vars['tipoivacomprareducido']},{$vars['controlstock']},{$vars['unidaddecimales']},{$vars['preciodecimales']},{$vars['costedecimales']},{$vars['stockfactor']},{$vars['etiquetasegununidadmedida']},{$vars['ubicacion']},'{$vars['descripcioncorta']}',{$vars['formatodesccorta']},{$vars['formatodescripcion']},{$vars['aplicarinvsujetopasivo']},{$vars['tipobc3']},{$vars['unidadcontrolcarubicstock']},'{$vars['excluirweb']}')";
 
-    
+
+
+  
+     
         $stmt = static::$firebird->prepare($sql);
-       
+     
         // Execute the query with parameters
         return $stmt->execute();
      } catch (\Throwable $th) {

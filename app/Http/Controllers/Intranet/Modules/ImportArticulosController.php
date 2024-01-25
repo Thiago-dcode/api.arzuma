@@ -21,8 +21,9 @@ class ImportArticulosController extends Controller
     //POST REQUEST!
     public function index($companyName, Request $request)
     {
+       
         $moduleName = $request->user()["module_active"];
-
+  
 
         if (!Validate::module($request->user(), $moduleName, $companyName)) {
 
@@ -63,7 +64,7 @@ class ImportArticulosController extends Controller
                 'insert' => 0,
                 'messages' => []
             ];
-          
+         
             $doccab = ImportArt::insertDoccab();
           
           
@@ -135,8 +136,7 @@ class ImportArticulosController extends Controller
 
                 //check if the codarticulo from the .txt exist in articulo table
                 $result = ImportArt::getArticulo($companyName, $codigo);
-                //exist?
-              
+             
                 if ($result['status']) {
 
                     array_push($responses['messages'], [
@@ -150,7 +150,7 @@ class ImportArticulosController extends Controller
                 //start insert
 
                 $insert = ImportArt::insert($codigo, $articulo);
-              
+             
                 if ($insert['status']) {
 
                     array_push($responses['messages'], [
