@@ -14,9 +14,8 @@ class ImportArt
     static $firebird = null;
     public static function connect($company)
     {
-       
-        try {
 
+        try {
             static::$firebird = PymeConnection::start(Constants::get($company));
         } catch (\Throwable $th) {
 
@@ -44,7 +43,7 @@ class ImportArt
     //         (1,'importarticulo' , null, null)";
     //         $stmt = static::$firebird->prepare($sql);
     //        $result =  $stmt->execute();
-            
+
     //         if ($result) {
     //             return [
     //                 'status' => true,
@@ -157,17 +156,17 @@ class ImportArt
             //     $obj['error'] = 'No se ha podido ACTUALIZAR en tabla COMPRA';
             // }
             $result1 = self::insertDoclin($codigo, $articulo);
-          
+
             if (!$result1) {
-              
+
                 $obj['error'] = 'No se ha podido ACTUALIZAR en tabla DOCLIN';
             }
             // $result4 = self::updateOrInsertExistenc($codigo, $articulo);
-           
+
             // if (!$result4) {
-              
-                  
-             
+
+
+
             //     $obj['error'] = 'No se ha podido ACTUALIZAR en tabla EXISTENC';
             // }
 
@@ -192,13 +191,13 @@ class ImportArt
             'error' => 'No se ha podido INSERTAR en tabla ARTICULO'
         ];
         try {
-         
+
             $result1 = self::insertArticulo($codigo, $articulo);
-         
+
             if (!$result1) {
                 $obj['error'] = 'No se ha podido INSERTAR en tabla ARTICULO';
             }
-          
+
             $result2 = self::insertCodbar($codigo, $articulo);
             if (!$result2) {
                 $obj['error'] = 'No se ha podido INSERTAR en tabla CODBARRA';
@@ -213,7 +212,7 @@ class ImportArt
             if (!$result3) {
                 $obj['error'] = 'No se ha podido INSERTAR en tabla DOCLIN';
             }
-        
+
             // $result5 = self::updateOrInsertExistenc($codigo, $articulo);
             // if (!$result5) {
             //     $obj['error'] = 'No se ha podido INSERTAR en tabla EXISTENC';
@@ -251,54 +250,83 @@ class ImportArt
         return $result;
     }
 
+    // public static function insertImage($codigo)
+    // {
+    //     try {
+    //         $image = file_get_contents(__DIR__ . '/image.png');
+    //         $sql = "SELECT  * from FOTOGRAF where codarticulo = '$codigo' and codigo = 1 and orden =1";
+    //         $stmt = static::$firebird->prepare($sql);
+    //         $stmt->execute();
+    //         $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    //         if (!$result) {
+             
+    //             $sql = "INSERT INTO FOTOGRAF (CODARTICULO,CODIGO,ORDEN,FOTO,EXCLUIRWEB) VALUES($codigo,1,1,?,'F')";
+    //             $stmt = static::$firebird->prepare($sql);
+    //             $stmt->bindParam(1, $image, PDO::PARAM_LOB);
+    //             $result = $stmt->execute();
+    //             return $result;
+    //         } else {
+    //             $sql = "UPDATE FOTOGRAF set FOTO = ? where CODARTICULO ='$codigo' and codigo = 1 and orden =1";
+    //             $stmt = static::$firebird->prepare($sql);
+    //             $stmt->bindParam(1, $image, PDO::PARAM_LOB);
+    //             $result = $stmt->execute();
+    //             return $result;
+    //         }
+    //     } catch (\Throwable $th) {
+    //         dd($th->getMessage());
+    //         return false;
+    //     }
+    // }
+
     private static function insertArticulo($codigo, $articulo)
     {
-     try {
-        $vars = [
-            'codigo' => (string) $codigo,
-            'codmarca' => 1,
-            'nombre' =>(string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
-            'descripcion' => (string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
-            'preciocoste' => (float)$articulo['precio'],
-            'baja' => 'F',
-            'tipoactualizacion' => 0,
-            'tipoiva' => (int)$articulo['tipoiva'],
-            'tipoivareducido' => 1,
-            'tipoivacompra' => 0,
-            'tipoivacomprareducido' => 1,
-            'controlstock' => 1,
-            'unidaddecimales' => 0,
-            'preciodecimales' => 2,
-            'costedecimales' => 2,
-            'stockfactor' => 1,
-            'etiquetasegununidadmedida' => 0,
-            'ubicacion' => 0,
-            'descripcioncorta' => (string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
-            'formatodesccorta' => 0,
-            'formatodescripcion' => 2,
-            'aplicarinvsujetopasivo' => 0,
-            'tipobc3' => 20,
-            'unidadcontrolcarubicstock' => 0,
-            'excluirweb' => 'T',
-        ];
-        $fieldsToInsert =  implode(',', array_keys($vars));
-   
-        $sql = "INSERT INTO articulo 
+        try {
+            $vars = [
+                'codigo' => (string) $codigo,
+                'codmarca' => 1,
+                'nombre' => (string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
+                'descripcion' => (string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
+                'preciocoste' => (float)$articulo['precio'],
+                'baja' => 'F',
+                'tipoactualizacion' => 0,
+                'tipoiva' => (int)$articulo['tipoiva'],
+                'tipoivareducido' => 1,
+                'tipoivacompra' => 0,
+                'tipoivacomprareducido' => 1,
+                'controlstock' => 1,
+                'unidaddecimales' => 0,
+                'preciodecimales' => 2,
+                'costedecimales' => 2,
+                'stockfactor' => 1,
+                'etiquetasegununidadmedida' => 0,
+                'ubicacion' => 0,
+                'descripcioncorta' => (string) mb_convert_encoding($articulo['nombre'], "UTF-8"),
+                'formatodesccorta' => 0,
+                'formatodescripcion' => 2,
+                'aplicarinvsujetopasivo' => 0,
+                'tipobc3' => 20,
+                'unidadcontrolcarubicstock' => 0,
+                'excluirweb' => 'T',
+            ];
+            $fieldsToInsert =  implode(',', array_keys($vars));
+
+            $sql = "INSERT INTO articulo 
         ($fieldsToInsert) 
         VALUES 
         ('{$vars['codigo']}',{$vars['codmarca']},'{$vars['nombre']}','{$vars['descripcion']}',{$vars['preciocoste']},'{$vars['baja']}',{$vars['tipoactualizacion']},{$vars['tipoiva']},{$vars['tipoivareducido']},{$vars['tipoivacompra']},{$vars['tipoivacomprareducido']},{$vars['controlstock']},{$vars['unidaddecimales']},{$vars['preciodecimales']},{$vars['costedecimales']},{$vars['stockfactor']},{$vars['etiquetasegununidadmedida']},{$vars['ubicacion']},'{$vars['descripcioncorta']}',{$vars['formatodesccorta']},{$vars['formatodescripcion']},{$vars['aplicarinvsujetopasivo']},{$vars['tipobc3']},{$vars['unidadcontrolcarubicstock']},'{$vars['excluirweb']}')";
 
 
 
-  
-     
-        $stmt = static::$firebird->prepare($sql);
-     
-        // Execute the query with parameters
-        return $stmt->execute();
-     } catch (\Throwable $th) {
-       dd($th->getMessage());
-     }
+
+
+            $stmt = static::$firebird->prepare($sql);
+
+            // Execute the query with parameters
+            return $stmt->execute();
+        } catch (\Throwable $th) {
+            dd($th->getMessage());
+        }
     }
     private static function insertCodbar($codigo, $articulo)
     {
@@ -329,19 +357,19 @@ class ImportArt
             $stmt = static::$firebird->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
             if ($result) {
 
                 $sql = "UPDATE EXISTENC SET STOCK1 = '{$articulo['cantidad']}' where CODARTICULO = '$codigo'";
                 $stmt = static::$firebird->prepare($sql);
-               
+
                 $result = $stmt->execute();
-           
+
                 return $result;
             }
             $sql = "INSERT INTO EXISTENC (CODARTICULO,CODALMACEN,STOCK1) VALUES('$codigo',1,'{$articulo['cantidad']}')";
             $stmt = static::$firebird->prepare($sql);
-       
+
             $result = $stmt->execute();
             return $result;
             //insert
@@ -358,33 +386,33 @@ class ImportArt
             $stmt = static::$firebird->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
-           
+
             if (!$result) return false;
-            $result = array_filter($result, fn ($r) => $r !==null);
-          
+            $result = array_filter($result, fn ($r) => $r !== null);
+
             $result['CODDOCUMENTO'] = $articulo['doccab'];
-            $result['CODIGO'] ++;
+            $result['CODIGO']++;
             $result['CODARTICULO'] = $codigo;
             $result['CANTIDAD'] = $articulo['cantidad'];
             $result['TIPOIVA'] = $articulo['tipoiva'];
             $result['PRECIO'] = $articulo['precio'];
             $result['CODBARRAS'] = $articulo['codbar'];
             $fieldsToInsert =  implode(',', array_keys($result));
-           
+
             do {
                 $sql = "SELECT CODDOCUMENTO FROM doclin WHERE CODDOCUMENTO = {$result['CODIGO']}";
                 $stmt = static::$firebird->prepare($sql);
-              
+
                 $stmt->execute();
                 $resultExist = $stmt->fetch(PDO::FETCH_ASSOC);
-                
+
                 // Your logic inside the loop
-                if($resultExist) ++$result['CODIGO'];
+                if ($resultExist) ++$result['CODIGO'];
                 // Increment $codigo for the next iteration
-                
-            
+
+
             } while ($resultExist);
-         
+
             $sql = "INSERT INTO doclin ($fieldsToInsert) VALUES (
                 {$result['CODDOCUMENTO']},
                 {$result['CODIGO']},
@@ -414,12 +442,12 @@ class ImportArt
                 {$result['TIPOLINEA']},
                 '{$result['CODBARRAS']}')";
             $stmt = static::$firebird->prepare($sql);
-           
+
             $resultInsert = $stmt->execute();
-          
+
             return $resultInsert;
         } catch (\Throwable $th) {
-         dd( [$th->getMessage(),$codigo, $result]);
+            dd([$th->getMessage(), $codigo, $result]);
             return false;
         }
     }
@@ -491,47 +519,47 @@ class ImportArt
             ];
         }
     }
-    private static function updateCompra($codigo, $articulo)
-    {
-        $vars = [
-            'preciocoste' => (float)$articulo['precio'],
-            'codarticulo' => $codigo,
-        ];
+    // private static function updateCompra($codigo, $articulo)
+    // {
+    //     $vars = [
+    //         'preciocoste' => (float)$articulo['precio'],
+    //         'codarticulo' => $codigo,
+    //     ];
 
-        $sql = "UPDATE compra 
-                SET preciocoste = {$vars['preciocoste']}
-                WHERE codarticulo = '{$vars['codarticulo']}'
-                AND codcaract = null
-                AND valorcaract = null";
+    //     $sql = "UPDATE compra 
+    //             SET preciocoste = {$vars['preciocoste']}
+    //             WHERE codarticulo = '{$vars['codarticulo']}'
+    //             AND codcaract = null
+    //             AND valorcaract = null";
 
-        $stmt = self::$firebird->prepare($sql);
-
-
-
-        $result = $stmt->execute();
-
-        return $result;
-    }
+    //     $stmt = self::$firebird->prepare($sql);
 
 
-    private static function insertCompra($codigo, $articulo)
-    {
-        $vars = [
-            'preciocoste' => (float)$articulo['precio'],
-            'codarticulo' => $codigo,
-            'codproveedor' => null
-        ];
-        $sql = "INSERT INTO compra 
-        (codarticulo, codproveedor, preciocoste) 
-        VALUES 
-        ('{$vars['codarticulo']}', null , {$vars['codarticulo']})";
 
-        $stmt = static::$firebird->prepare($sql);
+    //     $result = $stmt->execute();
 
-        // Execute the query with parameters
-        $result = $stmt->execute();
-        return $result;
-    }
+    //     return $result;
+    // }
+
+
+    // private static function insertCompra($codigo, $articulo)
+    // {
+    //     $vars = [
+    //         'preciocoste' => (float)$articulo['precio'],
+    //         'codarticulo' => $codigo,
+    //         'codproveedor' => null
+    //     ];
+    //     $sql = "INSERT INTO compra 
+    //     (codarticulo, codproveedor, preciocoste) 
+    //     VALUES 
+    //     ('{$vars['codarticulo']}', null , {$vars['codarticulo']})";
+
+    //     $stmt = static::$firebird->prepare($sql);
+
+    //     // Execute the query with parameters
+    //     $result = $stmt->execute();
+    //     return $result;
+    // }
 
 
     public static function getArticulosFromTxt($fileContent)
@@ -589,7 +617,7 @@ class ImportArt
                     continue;
                 }
             } catch (\Throwable $th) {
-                dd('Error extracting articles from document given: '.$th->getMessage());
+                dd('Error extracting articles from document given: ' . $th->getMessage());
             }
         }
 

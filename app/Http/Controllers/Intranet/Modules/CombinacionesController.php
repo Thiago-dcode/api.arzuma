@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Intranet\Modules;
 
-use App\Models\Module;
+use App\Intranet\Utils\Constants;
 use Illuminate\Http\Request;
 use App\Traits\HttpResponses;
 use App\Intranet\Utils\Validate;
@@ -25,8 +25,9 @@ class CombinacionesController extends Controller
         $cod_articulo = isset($request['codarticulo']) ? $request['codarticulo'] : '';
         $proveedor = isset($request['proveedor']) ? $request['proveedor'] : '';
         $limit = isset($request['limit']) ? $request['limit'] : 10;
-
-
+      
+        // $ftp = Combinaciones::getFileFTP();
+        // dd($ftp);
         $result = Combinaciones::get($companyName, $cod_articulo, $proveedor, $limit);
 
 

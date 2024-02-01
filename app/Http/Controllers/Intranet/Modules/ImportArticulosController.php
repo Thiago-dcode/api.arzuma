@@ -44,7 +44,10 @@ class ImportArticulosController extends Controller
             $desirePath = "uploads/$companyName/$today/";
             $path = $uploadedFile->storeAs($desirePath, $file);
             $fileContent = Storage::get($path);
+            
+            // ImportArt::connect($companyName);
             ImportArt::connect('PRUEBA');
+           
             $articulos = ImportArt::getArticulosFromTxt($fileContent);
 
             if (!$articulos) {
@@ -65,6 +68,7 @@ class ImportArticulosController extends Controller
                 'messages' => []
             ];
          
+           
             $doccab = ImportArt::insertDoccab();
           
           

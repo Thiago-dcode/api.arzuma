@@ -23,7 +23,7 @@ class Combinaciones
 
         $result = [];
 
-        
+
 
         $offset = 0;
         $page = 1;
@@ -82,7 +82,7 @@ class Combinaciones
 
 
         $to = $limit - 9;
-        $sql = "select articulo.codigo, articulo.nombre, articulo.preciocoste, articulo.precioventa, articulo.codmarca, articulo.codfamilia, articulo.proveeddefecto, articulo.metakeywords,
+        $sql = "select articulo.codigo,articulo.descripcioncorta, articulo.nombre, articulo.preciocoste, articulo.precioventa, articulo.codmarca, articulo.codfamilia, articulo.proveeddefecto, articulo.metakeywords,
         carvalortemporada.valor as temporada, carvalorcoleccion.valor as coleccion, webgrupocategoriaarticulo.codgrupocategoria, webgrupocategoriaarticulo.codcategoriadefecto
         from articulo
         left join caract as caracttemporada on caracttemporada.codclase=2 and caracttemporada.nombre='Temporada'
@@ -158,6 +158,37 @@ class Combinaciones
 
         return self::formatData($data);
     }
+    public static function getFileFTP($codigo)
+    {
+        $image = file_get_contents(__DIR__ . '/image.png');
+        return $image;
+        $ftp_server = "141.95.252.198";
+
+        $ftp_username = "your_username";
+        $ftp_password = "your_password";
+        $remote_file = "c:/$codigo.jpg";
+
+
+        // Establish an FTP connection
+        try {
+            $ftp_conn = ftp_connect($ftp_server);
+        } catch (\Throwable $th) {
+
+            dd($th->getMessage());
+        }
+
+
+        // // Login to the FTP server
+        // $login_result = ftp_login($ftp_conn, $ftp_username, $ftp_password);
+        // if (!$login_result) {
+        //     die("FTP login failed");
+        // }
+        // $file_content = ftp_get($ftp_conn, $remote_file);
+
+
+        // // Close the FTP connection
+        // ftp_close($ftp_conn);
+    }
 
 
     private static function getMarca()
@@ -167,6 +198,16 @@ class Combinaciones
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    private static function getRefProveed($codarticulo)
+    {
+
+        $sql = "SELECT REFERENCIA FROM compra where codarticulo = '$codarticulo'";
+
+        $stmt = static::$firebird->prepare($sql);
+
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC)['REFERENCIA'];
+    }
     private static function getProveedor()
     {
         $sql = 'SELECT NOMBRECOMERCIAL as nombre, CODIGO as codigo  FROM PROVEED';
@@ -174,6 +215,7 @@ class Combinaciones
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
     private static function getTemporada()
     {
         $sql = 'select VALOR as nombre from carvalid where codclase = 2 and codcaract = 1 and codobjeto is null';
@@ -215,7 +257,7 @@ class Combinaciones
             $stmt = static::$firebird->prepare($sql);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             // Handle the exception, e.g., log the error or display an error message
             // echo 'Error: ' . $e->getMessage();
         }
@@ -232,7 +274,7 @@ class Combinaciones
             $stmt->execute();
 
             return $stmt->fetch(PDO::FETCH_ASSOC)['PRECIOTARIFA'];
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             // Handle the exception, e.g., log the error or display an error message
             // echo 'Error: ' . $e->getMessage();
         }
@@ -274,16 +316,28 @@ class Combinaciones
             'readonly' => false
         ];
 
-        $dataFormated['S_metakey'] = [
-            'id' => '',
-            'placeholder' => 'keywords',
-            'data' =>  '',
-            'readonly' => false
-        ];
 
         $dataFormated['S_nom'] = [
             'id' => '',
             'placeholder' => 'nombre',
+            'data' =>  '',
+            'readonly' => false
+        ];
+        $dataFormated['S_descorta'] = [
+            'id' => '',
+            'placeholder' => 'descripcion corta',
+            'data' =>  '',
+            'readonly' => false
+        ];
+        $dataFormated['S_REPRV'] = [
+            'id' => '',
+            'placeholder' => 'Referencia proveedor',
+            'data' =>  '',
+            'readonly' => false
+        ];
+        $dataFormated['S_metakey'] = [
+            'id' => '',
+            'placeholder' => 'keywords',
             'data' =>  '',
             'readonly' => false
         ];
@@ -410,7 +464,7 @@ class Combinaciones
 
     private  static function formatData($data)
     {
-        // dd($data);
+
 
         $marca = self::getMarca();
 
@@ -536,13 +590,24 @@ class Combinaciones
                 'data' =>  $d['CODIGO'],
                 'readonly' => true
             ];
-
+            $dataFormated['S_REPRV'] = [
+                'id' => '',
+                'placeholder' => 'referencia proveedor',
+                'data' =>  self::getRefProveed($d['CODIGO']),
+                'readonly' => false
+            ];
 
             $dataFormated['S_nom'] = [
                 'id' => '',
                 'placeholder' => 'nombre',
                 'data' =>  $d['NOMBRE'],
                 'readonly' => true
+            ];
+            $dataFormated['S_descorta'] = [
+                'id' => '',
+                'placeholder' => 'descripcion corta',
+                'data' =>  $d['DESCRIPCIONCORTA'],
+                'readonly' => false
             ];
             $dataFormated['S_metakey'] = [
                 'id' => '',
@@ -752,29 +817,24 @@ class Combinaciones
 
         $vars = [
             'codmarca' => (int) $articulo['marca'],
-            'descripcion' => (string) utf8_decode($articulo['nom'] .
-                '<br><br>' .
-                $articulo['metakey'] ? $articulo['metakey'] : '' .
-                ',' .
-                $hombreMujer .
-                ',' .
-                $categoriaWeb),
+            'descripcion' => (string) mb_convert_encoding($articulo['nom'] . '<br><br>' . ($articulo['metakey'] ? $articulo['metakey'] : '') . ',' . $hombreMujer . ',' . $categoriaWeb, "UTF-8"),
             'preciocoste' => (float) $articulo['coste'],
             'precioventa' => (float) $articulo['P.V.A'],
             'codfamilia' => (float) $articulo['familia'],
+            'descripcioncorta' => (string) mb_convert_encoding($articulo['descorta'] ?? '', "UTF-8"),
             'metakeywords' => $articulo['metakey'],
             'codigo' => $articulo['COD']
         ];
 
-
-        $sql = "update articulo set
-        codmarca = " . $vars["codmarca"] . ",
-        descripcion = '" . $vars["descripcion"] . "',
-        preciocoste ='" . $vars["preciocoste"] . "',
-        precioventa =" . $vars["precioventa"] . ",
-        codfamilia =" . $vars["codfamilia"] . ",
-        metakeywords ='" . $vars["metakeywords"] . "'
-        where codigo ='" . $vars["codigo"] . "'";
+        $sql = "UPDATE articulo SET
+            codmarca = " . $vars["codmarca"] . ",
+            descripcion = '" . $vars["descripcion"] . "',
+            preciocoste = '" . $vars["preciocoste"] . "',
+            precioventa = " . $vars["precioventa"] . ",
+            codfamilia = " . $vars["codfamilia"] . ",
+            descripcioncorta = '" . $vars["descripcioncorta"] . "',
+            metakeywords = '" . $vars["metakeywords"] . "'
+            WHERE codigo = '" . $vars["codigo"] . "'";
 
         $stmt = static::$firebird->prepare($sql);
 
@@ -857,7 +917,7 @@ class Combinaciones
 
         //temporada
         if (isset($articulo['temporada']) && $articulo['temporada'] &&  $codcaractTemporada) {
-           
+
             $vars['valor'] = $articulo['temporada'];
             $sql = 'UPDATE carvalor 
             SET valor = \'' . $vars['valor'] . '\'
@@ -868,7 +928,7 @@ class Combinaciones
             $result = $stmt->execute();
         }
         if (isset($articulo['coleccion']) && $articulo['coleccion'] &&  $codcaractColeccion) {
-         
+
             $vars['valor'] = $articulo['coleccion'];
 
             $sql = 'UPDATE carvalor 
@@ -887,7 +947,7 @@ class Combinaciones
 
         //coleccion
 
-      
+
 
 
         // $combinacionesLogger->debug('Carvalor Temporada actualizada', $vars);
@@ -1103,7 +1163,7 @@ class Combinaciones
         $result =  self::updateCompra($articulo);
 
         $result =  self::updateCarValor($articulo);
-    
+
         if (isset($articulo['hombre/mujer']) && $articulo['hombre/mujer'] && isset($articulo['cat.web']) && $articulo['cat.web']) {
 
             $result = self::updateCategoriaWeb($articulo);
@@ -1137,14 +1197,13 @@ class Combinaciones
             static::$firebird = PymeConnection::start(Constants::get($company));
         }
 
-
-
         $articulo['COD'] = self::getCodigo($articulo);
         $codcaract = self::getCodCaract($articulo);
         $result = false;
-
+       
         $result = self::insertArticulos($articulo);
-
+        $result = self::insertImage($articulo['COD']);
+     
         $result = self::insertCompra($articulo);
 
         $result = self::insertCarValor($articulo);
@@ -1189,8 +1248,8 @@ class Combinaciones
             $vars = [
                 'codigo' => (string) $articulo['COD'],
                 'codmarca' => (int) $articulo['marca'],
-                'nombre' => (string) $articulo['nom'],
-                'descripcion' => (string) utf8_decode($articulo['nom'] . '<br><br>' . $articulo['metakey'] . ',' . $hombreMujer . ',' . $categoriaWeb),
+                'nombre' => (string) mb_convert_encoding((string) $articulo['nom'], "UTF-8"),
+                'descripcion' => (string) mb_convert_encoding($articulo['nom'] . '<br><br>' . $articulo['metakey'] . ',' . $hombreMujer . ',' . $categoriaWeb, "UTF-8"),
                 'preciocoste' => (float) $articulo['coste'],
                 'precioventa' => (float) $articulo['P.V.A'],
                 'codfamilia' => (float) $articulo['familia'],
@@ -1208,7 +1267,7 @@ class Combinaciones
                 'etiquetasegununidadmedida' => 0,
                 'proveeddefecto' => (int) $articulo['proveed'],
                 'ubicacion' => 0,
-                'descripcioncorta' => $articulo['nom'],
+                'descripcioncorta' => (string) mb_convert_encoding($articulo['descorta'] ?? '', "UTF-8"),
                 'formatodesccorta' => 0,
                 'formatodescripcion' => 2,
                 'metakeywords' => $articulo['metakey'],
@@ -1241,12 +1300,43 @@ class Combinaciones
             return $th->getMessage() . ' insertARTICULO';
         }
     }
+    public static function insertImage($codigo)
+    {
+        try {
+            $image = self::getFileFTP($codigo);
+          
+            $sql = "SELECT  * from FOTOGRAF where codarticulo = '$codigo' and codigo = 1 and orden =1";
+            $stmt = static::$firebird->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+           
+            if (!$result) {
+
+                $sql = "INSERT INTO FOTOGRAF (CODARTICULO,CODIGO,ORDEN,FOTO,EXCLUIRWEB) VALUES('$codigo',1,1,?,'F')";
+                $stmt = static::$firebird->prepare($sql);
+                $stmt->bindParam(1, $image, PDO::PARAM_LOB);
+               
+                $result = $stmt->execute();
+                return $result;
+            } else {
+                $sql = "UPDATE FOTOGRAF set FOTO = ? where CODARTICULO ='$codigo' and codigo = 1 and orden =1";
+                $stmt = static::$firebird->prepare($sql);
+                $stmt->bindParam(1, $image, PDO::PARAM_LOB);
+                $result = $stmt->execute();
+                return $result;
+            }
+        } catch (\Throwable $th) {
+            dd($th->getMessage());
+            return false;
+        }
+    }
     private static function insertCompra($articulo)
     {
 
         try {
             $vars = [
                 'codarticulo' => (string) $articulo['COD'],
+                'referencia' => $articulo['REPRV'],
                 'codproveedor' => (int) $articulo['proveed'],
                 'preciocoste' => (float) $articulo['coste'],
                 'preciotarifa' => (float) $articulo['precio'],
@@ -1254,9 +1344,10 @@ class Combinaciones
             ];
 
             $sql = 'INSERT INTO compra 
-                (codarticulo, codproveedor, preciocoste, preciotarifa, descuento) 
+                (codarticulo, referencia, codproveedor, preciocoste, preciotarifa, descuento) 
                 VALUES 
-                (\'' . $vars['codarticulo'] . '\', ' . (int)$vars['codproveedor'] . ', ' . (float)$vars['preciocoste'] . ', ' . (float)$vars['preciotarifa'] . ', ' . (float)$vars['descuento'] . ')';
+                (\'' . $vars['codarticulo'] . '\', \'' . $vars['referencia'] . '\', ' . (int)$vars['codproveedor'] . ', ' . (float)$vars['preciocoste'] . ', ' . (float)$vars['preciotarifa'] . ', ' . (float)$vars['descuento'] . ')';
+
 
             $stmt = static::$firebird->prepare($sql);
 
